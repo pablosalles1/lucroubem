@@ -96,21 +96,11 @@
 <body>
   <div class="sidebar">
     <h2>LucrouBem</h2>
-    <a href="dashboard.html" class="menu-item">
-      🏠 Dashboard
-    </a>
-    <a href="lancar_venda.html" class="menu-item">
-      ➕ Lançar Venda
-    </a>
-    <a href="lancar_gasto.html" class="menu-item">
-      💰 Lançar Gasto
-    </a>
-    <a href="relatorios.html" class="menu-item active">
-      📊 Relatórios
-    </a>
-    <a href="#" class="menu-item">
-      ↪ Sair
-    </a>
+    <a href="dashboard.html" class="menu-item">🏠 Dashboard</a>
+    <a href="lancar_venda.html" class="menu-item">➕ Lançar Venda</a>
+    <a href="lancar_gasto.html" class="menu-item">💰 Lançar Gasto</a>
+    <a href="relatorios.html" class="menu-item active">📊 Relatórios</a>
+    <a href="#" class="menu-item">↪ Sair</a>
   </div>
 
   <div class="content">
@@ -156,65 +146,119 @@
     </div>
   </div>
 
-  <script>
-    const comparativoCtx = document.getElementById('comparativoChart').getContext('2d');
-    new Chart(comparativoCtx, {
-      type: 'line',
-      data: {
-        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-        datasets: [
-          {
-            label: 'Lucro (R$)',
-            data: [120, 200, 180, 150, 220, 250, 290],
-            borderColor: '#2e7d32',
-            backgroundColor: 'rgba(46, 125, 50, 0.2)',
-            fill: true
-          },
-          {
-            label: 'Gastos (R$)',
-            data: [80, 130, 100, 140, 180, 160, 160],
-            borderColor: '#c62828',
-            backgroundColor: 'rgba(198, 40, 40, 0.2)',
-            fill: true
-          }
-        ]
-      }
-    });
-
-    const categoriasCtx = document.getElementById('categoriasChart').getContext('2d');
-    new Chart(categoriasCtx, {
-      type: 'bar',
-      data: {
-        labels: ['Insumos', 'Funcionários', 'Contas Fixas', 'Aluguel'],
-        datasets: [{
-          label: 'Gasto total (R$)',
-          data: [800, 1200, 600, 500],
-          backgroundColor: ['#1565c0', '#ef6c00', '#2e7d32', '#c62828']
-        }]
-      }
-    });
-  </script>
   <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
-    authDomain: "lucroubem.firebaseapp.com",
-    projectId: "lucroubem",
-    storageBucket: "lucroubem.firebasestorage.app",
-    messagingSenderId: "620372674751",
-    appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
-  };
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
+      authDomain: "lucroubem.firebaseapp.com",
+      projectId: "lucroubem",
+      storageBucket: "lucroubem.firebasestorage.app",
+      messagingSenderId: "620372674751",
+      appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
+    };
 
-  firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
 
-  firebase.auth().onAuthStateChanged((user) => {
-    if (!user) {
-      window.location.href = "index.html"; // Redireciona se não estiver logado
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      } else {
+        carregarDadosRelatorio(user.uid);
+      }
+    });
+
+    function carregarDadosRelatorio(uidAtual) {
+      const db = firebase.firestore();
+      const hoje = new Date();
+      const seteDiasAtras = new Date();
+      seteDiasAtras.setDate(hoje.getDate() - 6);
+
+      const vendasRef = db.collection("vendas")
+        .where("uid", "==", uidAtual)
+        .where("criadoEm", ">=", seteDiasAtras);
+
+      const gastosRef = db.collection("gastos")
+        .where("uid", "==", uidAtual)
+        .where("criadoEm", ">=", seteDiasAtras);
+
+      Promise.all([vendasRef.get(), gastosRef.get()]).then(([vendasSnap, gastosSnap]) => {
+        const lucrosPorDia = {};
+        const gastosPorDia = {};
+        const categorias = {};
+
+        for (let i = 0; i < 7; i++) {
+          const dia = new Date();
+          dia.setDate(hoje.getDate() - (6 - i));
+          const key = dia.toISOString().slice(0, 10);
+          lucrosPorDia[key] = 0;
+          gastosPorDia[key] = 0;
+        }
+
+        vendasSnap.forEach(doc => {
+          const { data, valor } = doc.data();
+          if (data && valor) {
+            lucrosPorDia[data] = (lucrosPorDia[data] || 0) + valor;
+          }
+        });
+
+        gastosSnap.forEach(doc => {
+          const { data, valor, categoria } = doc.data();
+          if (data && valor) {
+            gastosPorDia[data] = (gastosPorDia[data] || 0) + valor;
+          }
+          if (categoria) {
+            categorias[categoria] = (categorias[categoria] || 0) + valor;
+          }
+        });
+
+        atualizarGraficos(lucrosPorDia, gastosPorDia, categorias);
+      });
     }
-  });
-</script>
 
+    function atualizarGraficos(lucros, gastos, categorias) {
+      const dias = Object.keys(lucros);
+      const lucroValores = dias.map(dia => lucros[dia]);
+      const gastoValores = dias.map(dia => gastos[dia]);
+
+      const comparativoCtx = document.getElementById('comparativoChart').getContext('2d');
+      new Chart(comparativoCtx, {
+        type: 'line',
+        data: {
+          labels: dias,
+          datasets: [
+            {
+              label: 'Lucro (R$)',
+              data: lucroValores,
+              borderColor: '#2e7d32',
+              backgroundColor: 'rgba(46, 125, 50, 0.2)',
+              fill: true
+            },
+            {
+              label: 'Gastos (R$)',
+              data: gastoValores,
+              borderColor: '#c62828',
+              backgroundColor: 'rgba(198, 40, 40, 0.2)',
+              fill: true
+            }
+          ]
+        }
+      });
+
+      const categoriasCtx = document.getElementById('categoriasChart').getContext('2d');
+      new Chart(categoriasCtx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(categorias),
+          datasets: [{
+            label: 'Gasto total (R$)',
+            data: Object.values(categorias),
+            backgroundColor: ['#1565c0', '#ef6c00', '#2e7d32', '#c62828', '#7b1fa2', '#0097a7']
+          }]
+        }
+      });
+    }
+  </script>
 </body>
 </html>
-
