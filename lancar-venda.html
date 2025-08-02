@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Lançar Venda</title>
+    <style>
+        body {
+            background-color: #e6f0fa;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 60px auto;
+            background: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1d4ed8;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            background-color: #1d4ed8;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .small-button {
+            font-size: 13px;
+            padding: 4px 10px;
+            margin-top: 0;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        #novaCategoriaContainer {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lançar Venda</h1>
+    <div class="container">
+        <form>
+            <label for="valor">Valor</label>
+            <input type="text" id="valor" name="valor" placeholder="R$ 0,00" oninput="formatarValor(this)">
+
+            <label for="data">Data</label>
+            <input type="date" id="data" name="data">
+
+            <label for="descricao">Descrição</label>
+            <input type="text" id="descricao" name="descricao">
+
+            <label for="categoria">Categoria</label>
+            <select id="categoria" name="categoria">
+                <option value="Marmita">Marmita</option>
+                <option value="Bebida">Bebida</option>
+                <option value="Outros">Outros</option>
+            </select>
+
+            <button type="button" class="small-button" onclick="mostrarCampoCategoria()">+ Adicionar Categoria</button>
+
+            <div id="novaCategoriaContainer">
+                <label for="novaCategoria">Nova Categoria</label>
+                <input type="text" id="novaCategoria" name="novaCategoria" placeholder="Ex: Doce, Lanche">
+            </div>
+
+            <div class="buttons">
+                <button type="submit">Salvar</button>
+                <button type="button" onclick="window.history.back()">Voltar</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function formatarValor(input) {
+            let valor = input.value.replace(/\D/g, '');
+            if (valor) {
+                valor = (parseInt(valor, 10) / 100).toFixed(2);
+                input.value = 'R$ ' + valor.replace('.', ',');
+            } else {
+                input.value = '';
+            }
+        }
+
+        function mostrarCampoCategoria() {
+            const container = document.getElementById('novaCategoriaContainer');
+            container.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

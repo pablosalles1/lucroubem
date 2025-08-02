@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - LucrouBem</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #e6f0fa;
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #2563eb;
+      color: white;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-height: 350px;
+      border-bottom-right-radius: 15px;
+    }
+
+    .sidebar h2 {
+      margin-top: 0;
+      font-size: 22px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .menu-item:hover {
+      opacity: 0.9;
+    }
+
+    .menu-item svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .main-content {
+      margin-left: 240px;
+      padding: 30px;
+    }
+
+    .cards {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .card h4 {
+      color: #1d4ed8;
+      margin: 0 0 10px;
+    }
+
+    .charts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .chart-box {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .chart-box canvas {
+      max-width: 100%;
+      max-height: 300px;
+      margin: auto;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>LucrouBem</h2>
+    <div class="menu-item">
+      <span>🏠</span> <span>Dashboard</span>
+    </div>
+    <div class="menu-item">
+      <span>➕</span> <span>Lançar Venda</span>
+    </div>
+    <div class="menu-item">
+      <span>💳</span> <span>Lançar Gasto</span>
+    </div>
+    <div class="menu-item">
+      <span>📊</span> <span>Relatórios</span>
+    </div>
+    <div class="menu-item">
+      <span>⬅️</span> <span>Sair</span>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <h1>Dashboard</h1>
+
+    <div class="cards">
+      <div class="card">
+        <h4>Vendas nos últimos 7 dias</h4>
+        <p><strong>R$ 1.540,00</strong></p>
+      </div>
+      <div class="card">
+        <h4>Gastos nos últimos 7 dias</h4>
+        <p><strong>R$ 960,00</strong></p>
+      </div>
+      <div class="card">
+        <h4>Lucro estimado</h4>
+        <p><strong>R$ 580,00</strong></p>
+      </div>
+      <div class="card">
+        <h4>Lucro acumulado no mês</h4>
+        <p><strong>R$ 2.870,00</strong></p>
+      </div>
+    </div>
+
+    <div class="charts">
+      <div class="chart-box">
+        <h3>Lucro por dia (últimos 7 dias)</h3>
+        <canvas id="barChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Gastos por dia (últimos 7 dias)</h3>
+        <canvas id="lineChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Gráfico de barras: Lucro
+    const ctxBar = document.getElementById('barChart').getContext('2d');
+    new Chart(ctxBar, {
+      type: 'bar',
+      data: {
+        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+        datasets: [{
+          label: 'Lucro (R$)',
+          data: [120, 200, 180, 150, 220, 250, 290],
+          backgroundColor: '#2563eb'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        aspectRatio: 2
+      }
+    });
+
+    // Gráfico de linha: Gastos
+    const ctxLine = document.getElementById('lineChart').getContext('2d');
+    new Chart(ctxLine, {
+      type: 'line',
+      data: {
+        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+        datasets: [{
+          label: 'Gastos (R$)',
+          data: [80, 130, 110, 140, 180, 160, 160],
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.2)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 5,
+          pointBackgroundColor: '#ef4444'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        aspectRatio: 2
+      }
+    });
+  </script>
+</body>
+</html>
