@@ -146,8 +146,8 @@
 <script>
   const db = firebase.firestore();
 
-  function salvarGasto() {
-    const descricao = document.getElementById("descricao").value;
+  function salvarVenda() {
+    const produto = document.getElementById("produto").value;
     const valor = parseFloat(document.getElementById("valor").value);
     const data = document.getElementById("data").value;
     const user = firebase.auth().currentUser;
@@ -157,24 +157,25 @@
       return;
     }
 
-    db.collection("gastos").add({
+    db.collection("vendas").add({
       uid: user.uid,
-      descricao,
+      produto,
       valor,
       data,
       criadoEm: new Date()
     })
     .then(() => {
-      alert("Gasto salvo com sucesso!");
-      document.getElementById("form-gasto").reset();
+      alert("Venda salva com sucesso!");
+      document.getElementById("form-venda").reset();
     })
     .catch(error => {
-      alert("Erro ao salvar gasto: " + error.message);
+      alert("Erro ao salvar venda: " + error.message);
     });
   }
 </script>
 
 </body>
 </html>
+
 
 
