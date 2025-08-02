@@ -122,7 +122,9 @@
         }
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js"></script>
+
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
@@ -141,7 +143,38 @@
     }
   });
 </script>
+<script>
+  const db = firebase.firestore();
+
+  function salvarGasto() {
+    const descricao = document.getElementById("descricao").value;
+    const valor = parseFloat(document.getElementById("valor").value);
+    const data = document.getElementById("data").value;
+    const user = firebase.auth().currentUser;
+
+    if (!user) {
+      alert("Você precisa estar logado.");
+      return;
+    }
+
+    db.collection("gastos").add({
+      uid: user.uid,
+      descricao,
+      valor,
+      data,
+      criadoEm: new Date()
+    })
+    .then(() => {
+      alert("Gasto salvo com sucesso!");
+      document.getElementById("form-gasto").reset();
+    })
+    .catch(error => {
+      alert("Erro ao salvar gasto: " + error.message);
+    });
+  }
+</script>
 
 </body>
 </html>
+
 
