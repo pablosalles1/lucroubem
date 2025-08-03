@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LucrouBem - Lançamentos</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f7fc; margin: 0; padding: 20px; }
+    h1 { text-align: center; color: #2962ff; }
+    .tabs { display: flex; justify-content: center; margin: 20px 0; }
+    .tab-button {
+      padding: 10px 20px;
+      border: none;
+      background-color: #ddd;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .tab-button.active { background-color: #2962ff; color: white; }
+    .content-tab { display: none; }
+    .content-tab.active { display: block; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    button.edit, button.delete {
+      padding: 6px 10px;
+      margin-right: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button.edit { background-color: #2196f3; color: white; }
+    button.delete { background-color: #f44336; color: white; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js"></script>
+</head>
+<body>
+  <h1>Gerenciar Lançamentos</h1>
+
+  <div class="tabs">
+    <button class="tab-button active" onclick="mostrarTab('vendas')">Vendas</button>
+    <button class="tab-button" onclick="mostrarTab('gastos')">Gastos</button>
+  </div>
+
+  <div id="vendas" class="content-tab active">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th><th>Descrição</th><th>Valor</th><th>Categoria</th><th>Cliente</th><th>Forma Pagamento</th><th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-vendas"></tbody>
+    </table>
+  </div>
+
+  <div id="gastos" class="content-tab">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th><th>Descrição</th><th>Valor</th><th>Categoria</th><th>Forma Pagamento</th><th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-gastos"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
+      authDomain: "lucroubem.firebaseapp.com",
+      projectId: "lucroubem",
+      storageBucket: "lucroubem.firebasestorage.app",
+      messagingSenderId: "620372674751",
+      appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    function mostrarTab(tab) {
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.content-tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelector(`.tab-button[onclick*='${tab}']`).classList.add('active');
+      document.getElementById(tab).classList.add('active');
+    }
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) return window.location.href = "index.html";
+      carregarVendas(user.uid);
+      carregarGastos(user.uid);
+    });
+
+    function carregarVendas(uid) {
+      db.collection("vendas").where("uid", "==", uid).get().then(snapshot => {
+        const tabela = document.getElementById("tabela-vendas");
+        tabela.innerHTML = "";
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${data.data}</td>
+            <td>${data.descricao || ''}</td>
+            <td>R$ ${data.valor.toFixed(2).replace('.', ',')}</td>
+            <td>${data.categoria || ''}</td>
+            <td>${data.cliente || ''}</td>
+            <td>${data.pagamento || ''}</td>
+            <td>
+              <button class="edit" onclick="editarLancamento('vendas', '${doc.id}')">Editar</button>
+              <button class="delete" onclick="excluirLancamento('vendas', '${doc.id}')">Excluir</button>
+            </td>
+          `;
+          tabela.appendChild(tr);
+        });
+      });
+    }
+
+    function carregarGastos(uid) {
+      db.collection("gastos").where("uid", "==", uid).get().then(snapshot => {
+        const tabela = document.getElementById("tabela-gastos");
+        tabela.innerHTML = "";
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${data.data}</td>
+            <td>${data.descricao || ''}</td>
+            <td>R$ ${data.valor.toFixed(2).replace('.', ',')}</td>
+            <td>${data.categoria || ''}</td>
+            <td>${data.pagamento || ''}</td>
+            <td>
+              <button class="edit" onclick="editarLancamento('gastos', '${doc.id}')">Editar</button>
+              <button class="delete" onclick="excluirLancamento('gastos', '${doc.id}')">Excluir</button>
+            </td>
+          `;
+          tabela.appendChild(tr);
+        });
+      });
+    }
+
+    function excluirLancamento(tipo, id) {
+      if (confirm("Tem certeza que deseja excluir este lançamento?")) {
+        db.collection(tipo).doc(id).delete().then(() => {
+          alert("Lançamento excluído com sucesso!");
+          firebase.auth().onAuthStateChanged(user => {
+            if (tipo === 'vendas') carregarVendas(user.uid);
+            else carregarGastos(user.uid);
+          });
+        });
+      }
+    }
+
+    function editarLancamento(tipo, id) {
+      window.location.href = `editar_lancamento.html?tipo=${tipo}&id=${id}`;
+    }
+  </script>
+</body>
+</html>
