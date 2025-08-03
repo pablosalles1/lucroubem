@@ -1,176 +1,138 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Lançar Gasto</title>
-    <style>
-        body {
-            background-color: #e6f0fa;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            max-width: 400px;
-            margin: 60px auto;
-            background: white;
-            padding: 30px 40px;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            text-align: center;
-            color: #1d4ed8;
-        }
-
-        label {
-            font-weight: bold;
-            display: block;
-            margin-top: 15px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 15px;
-        }
-
-        .buttons {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        button {
-            background-color: #1d4ed8;
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 15px;
-        }
-
-        .small-button {
-            font-size: 13px;
-            padding: 6px 12px;
-            margin-top: 0;
-            margin-bottom: 10px;
-            display: inline-block;
-        }
-
-        #novaCategoriaContainer {
-            display: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Lançar Gasto</title>
+  <style>
+    body {
+      background-color: #e6f0fa;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      max-width: 400px;
+      margin: 60px auto;
+      background: white;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+    h1 { text-align: center; color: #1d4ed8; }
+    label { font-weight: bold; display: block; margin-top: 15px; }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    button {
+      background-color: #1d4ed8;
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .small-button {
+      font-size: 13px;
+      padding: 6px 12px;
+      display: inline-block;
+    }
+    #novaCategoriaContainer { display: none; }
+  </style>
 </head>
 <body>
-    <h1>Lançar Gasto</h1>
-    <div class="container">
-        <form>
-            <label for="valor">Valor</label>
-            <input type="text" id="valor" name="valor" placeholder="R$ 0,00" oninput="formatarValor(this)">
+  <h1>Lançar Gasto</h1>
+  <div class="container">
+    <form onsubmit="event.preventDefault(); salvarGasto();">
+      <label for="valor">Valor</label>
+      <input type="text" id="valor" name="valor" placeholder="R$ 0,00" oninput="formatarValor(this)">
 
-            <label for="data">Data</label>
-            <input type="date" id="data" name="data">
+      <label for="data">Data</label>
+      <input type="date" id="data" name="data">
 
-            <label for="descricao">Descrição</label>
-            <input type="text" id="descricao" name="descricao">
+      <label for="descricao">Descrição</label>
+      <input type="text" id="descricao" name="descricao">
 
-            <label for="categoria">Categoria</label>
-            <select id="categoria" name="categoria">
-                <option value="Contas">Contas</option>
-                <option value="Insumos">Insumos</option>
-                <option value="Funcionário">Funcionário</option>
-            </select>
+      <label for="categoria">Categoria</label>
+      <select id="categoria"></select>
 
-            <button type="button" class="small-button" onclick="mostrarCampoCategoria()">+ Adicionar Categoria</button>
+      <button type="button" class="small-button" onclick="mostrarCampoCategoria()">+ Adicionar Categoria</button>
+      <div id="novaCategoriaContainer">
+        <label for="novaCategoria">Nova Categoria</label>
+        <input type="text" id="novaCategoria" name="novaCategoria" placeholder="Ex: Aluguel">
+      </div>
 
-            <div id="novaCategoriaContainer">
-                <label for="novaCategoria">Nova Categoria</label>
-                <input type="text" id="novaCategoria" name="novaCategoria" placeholder="Ex: Aluguel">
-            </div>
+      <div class="buttons">
+        <button type="submit">Salvar</button>
+        <button type="button" onclick="window.history.back()">Voltar</button>
+      </div>
+    </form>
+  </div>
 
-            <div class="buttons">
-                <button type="submit">Salvar</button>
-                <button type="button" onclick="window.history.back()">Voltar</button>
-            </div>
-        </form>
-    </div>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js"></script>
+  <script>
+    const firebaseConfig = { apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M", authDomain: "lucroubem.firebaseapp.com", projectId: "lucroubem" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    <script>
-        function formatarValor(input) {
-            let valor = input.value.replace(/\D/g, '');
-            valor = (parseInt(valor, 10) / 100).toFixed(2);
-            input.value = 'R$ ' + valor.replace('.', ',');
-        }
-
-        function mostrarCampoCategoria() {
-            const container = document.getElementById('novaCategoriaContainer');
-            container.style.display = 'block';
-        }
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js"></script>
-
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
-    authDomain: "lucroubem.firebaseapp.com",
-    projectId: "lucroubem",
-    storageBucket: "lucroubem.firebasestorage.app",
-    messagingSenderId: "620372674751",
-    appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-
-  firebase.auth().onAuthStateChanged((user) => {
-    if (!user) {
-      window.location.href = "index.html"; // Redireciona se não estiver logado
-    }
-  });
-</script>
-<script>
-  const db = firebase.firestore();
-
-  function salvarGasto() {
-    const descricao = document.getElementById("descricao").value;
-    const valor = parseFloat(document.getElementById("valor").value);
-    const data = document.getElementById("data").value;
-    const user = firebase.auth().currentUser;
-
-    if (!user) {
-      alert("Você precisa estar logado.");
-      return;
-    }
-
-    db.collection("gastos").add({
-      uid: user.uid,
-      descricao,
-      valor,
-      data,
-      criadoEm: new Date()
-    })
-    .then(() => {
-      alert("Gasto salvo com sucesso!");
-      document.getElementById("form-gasto").reset();
-    })
-    .catch(error => {
-      alert("Erro ao salvar gasto: " + error.message);
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) return window.location.href = "index.html";
+      carregarCategorias(user.uid);
     });
-  }
-</script>
 
+    function formatarValor(input) {
+      let valor = input.value.replace(/\D/g, '');
+      valor = (parseInt(valor, 10) / 100).toFixed(2);
+      input.value = 'R$ ' + valor.replace('.', ',');
+    }
+
+    function mostrarCampoCategoria() {
+      document.getElementById('novaCategoriaContainer').style.display = 'block';
+    }
+
+    async function carregarCategorias(uid) {
+      const select = document.getElementById("categoria");
+      select.innerHTML = "";
+
+      const snap = await db.collection("categorias_gasto").where("uid", "==", uid).get();
+      snap.forEach(doc => {
+        const opt = document.createElement("option");
+        opt.value = doc.data().nome;
+        opt.innerText = doc.data().nome;
+        select.appendChild(opt);
+      });
+    }
+
+    async function salvarGasto() {
+      const user = firebase.auth().currentUser;
+      const valor = parseFloat(document.getElementById("valor").value.replace(/\D/g, '')) / 100;
+      const data = document.getElementById("data").value;
+      const descricao = document.getElementById("descricao").value;
+      let categoria = document.getElementById("categoria").value;
+
+      const novaCategoria = document.getElementById("novaCategoria").value.trim();
+      if (novaCategoria !== "") {
+        categoria = novaCategoria;
+        await db.collection("categorias_gasto").add({ uid: user.uid, nome: novaCategoria });
+      }
+
+      await db.collection("gastos").add({
+        uid: user.uid, descricao, valor, data, categoria, criadoEm: new Date()
+      });
+
+      alert("Gasto salvo com sucesso!");
+      window.location.reload();
+    }
+  </script>
 </body>
 </html>
-
-
