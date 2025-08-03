@@ -5,9 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cadastro - LucrouBem</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js"></script>
+
+  <!-- Firebase SDK compatível com HTML puro -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
+      authDomain: "lucroubem.firebaseapp.com",
+      projectId: "lucroubem",
+      storageBucket: "lucroubem.firebasestorage.app",
+      messagingSenderId: "620372674751",
+      appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
 
   <style>
     body {
@@ -67,24 +81,12 @@
       text-decoration: none;
     }
   </style>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
-      authDomain: "lucroubem.firebaseapp.com",
-      projectId: "lucroubem",
-      storageBucket: "lucroubem.firebasestorage.app",
-      messagingSenderId: "620372674751",
-      appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
-    };
-    firebase.initializeApp(firebaseConfig);
-  </script>
 </head>
 <body>
   <div class="form-box">
     <h2>Cadastro - LucrouBem</h2>
     <input type="text" id="nome" placeholder="Seu nome completo" required />
-    <input type="text" id="telefone" placeholder="(00) 00000-0000" maxlength="15" oninput="mascararTelefone(this)" required />
+    <input type="text" id="telefone" placeholder="WhatsApp com DDD" required />
     <input type="text" id="negocio" placeholder="Nome do seu negócio" required />
     <input type="email" id="email" placeholder="Email" required />
     <input type="password" id="senha" placeholder="Senha" required />
@@ -93,17 +95,6 @@
   </div>
 
   <script>
-    function mascararTelefone(input) {
-      let valor = input.value.replace(/\D/g, '');
-      if (valor.length > 11) valor = valor.slice(0, 11);
-
-      if (valor.length <= 10) {
-        input.value = valor.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-      } else {
-        input.value = valor.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
-      }
-    }
-
     function registrar() {
       const nome = document.getElementById("nome").value.trim();
       const telefone = document.getElementById("telefone").value.trim();
@@ -129,11 +120,10 @@
         })
         .then(() => {
           alert("Cadastro realizado com sucesso!");
-          window.location.href = "dashboard.html";
+          window.location.href = "dashboard.html"; // ou "index.html" se preferir
         })
         .catch(error => {
           alert("Erro ao cadastrar: " + error.message);
-          console.error(error);
         });
     }
   </script>
