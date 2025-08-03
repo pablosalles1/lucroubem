@@ -95,6 +95,8 @@
   </div>
 
   <script>
+    const db = firebase.firestore();
+
     function registrar() {
       const nome = document.getElementById("nome").value.trim();
       const telefone = document.getElementById("telefone").value.trim();
@@ -110,7 +112,7 @@
       firebase.auth().createUserWithEmailAndPassword(email, senha)
         .then((userCredential) => {
           const user = userCredential.user;
-          return firebase.firestore().collection("users").doc(user.uid).set({
+          return db.collection("users").doc(user.uid).set({
             nome,
             telefone,
             negocio,
@@ -120,30 +122,43 @@
         })
         .then(() => {
           alert("Cadastro realizado com sucesso!");
-          window.location.href = "dashboard.html"; // ou "index.html" se preferir
+          window.location.href = "dashboard.html"; // ou index.html
         })
         .catch(error => {
-          alert("Erro ao cadastrar: " + error.message);
+          let msg;
+          switch (error.code) {
+            case "auth/email-already-in-use":
+              msg = "E-mail já cadastrado.";
+              break;
+            case "auth/invalid-email":
+              msg = "E-mail inválido.";
+              break;
+            case "auth/weak-password":
+              msg = "A senha deve ter pelo menos 6 caracteres.";
+              break;
+            default:
+              msg = error.message;
+          }
+          alert("Erro ao cadastrar: " + msg);
         });
     }
   </script>
-<script>
-  document.getElementById('telefone').addEventListener('input', function (e) {
-    let x = e.target.value.replace(/\D/g, '').substring(0, 11);
-    let ddd = x.substring(0, 2);
-    let parte1 = x.substring(2, 7);
-    let parte2 = x.substring(7, 11);
 
-    if (x.length > 7) {
-      e.target.value = `(${ddd}) ${parte1}-${parte2}`;
-    } else if (x.length > 2) {
-      e.target.value = `(${ddd}) ${parte1}`;
-    } else if (x.length > 0) {
-      e.target.value = `(${ddd}`;
-    }
-  });
-</script>
+  <script>
+    document.getElementById('telefone').addEventListener('input', function (e) {
+      let x = e.target.value.replace(/\D/g, '').substring(0, 11);
+      let ddd = x.substring(0, 2);
+      let parte1 = x.substring(2, 7);
+      let parte2 = x.substring(7, 11);
 
+      if (x.length > 7) {
+        e.target.value = `(${ddd}) ${parte1}-${parte2}`;
+      } else if (x.length > 2) {
+        e.target.value = `(${ddd}) ${parte1}`;
+      } else if (x.length > 0) {
+        e.target.value = `(${ddd}`;
+      }
+    });
+  </script>
 </body>
 </html>
-
