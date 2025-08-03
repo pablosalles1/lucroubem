@@ -157,5 +157,86 @@
       window.location.href = `editar_lancamento.html?tipo=${tipo}&id=${id}`;
     }
   </script>
+  <!-- Adição do modal para edição -->
+<div id="modal-edicao" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
+  <div style="background-color: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px;">
+    <h3>Editar Lançamento</h3>
+    <form id="form-edicao">
+      <input type="hidden" id="edit-id">
+
+      <label>Tipo:</label>
+      <select id="edit-tipo">
+        <option value="venda">Venda</option>
+        <option value="gasto">Gasto</option>
+      </select>
+
+      <label>Valor:</label>
+      <input type="number" id="edit-valor" required>
+
+      <label>Data:</label>
+      <input type="date" id="edit-data" required>
+
+      <label>Descrição:</label>
+      <input type="text" id="edit-descricao" required>
+
+      <label>Categoria:</label>
+      <input type="text" id="edit-categoria" required>
+
+      <label>Forma de Pagamento:</label>
+      <input type="text" id="edit-forma" required>
+
+      <label>Cliente (opcional):</label>
+      <input type="text" id="edit-cliente">
+
+      <div style="margin-top: 15px; display: flex; justify-content: space-between;">
+        <button type="submit">Salvar</button>
+        <button type="button" onclick="fecharModal()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function abrirModalEdicao(dados, tipo) {
+  document.getElementById('modal-edicao').style.display = 'flex';
+  document.getElementById('edit-id').value = dados.id;
+  document.getElementById('edit-tipo').value = tipo;
+  document.getElementById('edit-valor').value = dados.valor;
+  document.getElementById('edit-data').value = dados.data;
+  document.getElementById('edit-descricao').value = dados.descricao;
+  document.getElementById('edit-categoria').value = dados.categoria;
+  document.getElementById('edit-forma').value = dados.forma || '';
+  document.getElementById('edit-cliente').value = dados.cliente || '';
+}
+
+function fecharModal() {
+  document.getElementById('modal-edicao').style.display = 'none';
+}
+
+document.getElementById('form-edicao').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const id = document.getElementById('edit-id').value;
+  const tipo = document.getElementById('edit-tipo').value;
+  const dadosAtualizados = {
+    valor: parseFloat(document.getElementById('edit-valor').value),
+    data: document.getElementById('edit-data').value,
+    descricao: document.getElementById('edit-descricao').value,
+    categoria: document.getElementById('edit-categoria').value,
+    forma: document.getElementById('edit-forma').value,
+    cliente: document.getElementById('edit-cliente').value
+  };
+
+  firebase.firestore().collection(tipo === 'venda' ? 'vendas' : 'gastos').doc(id).update(dadosAtualizados)
+    .then(() => {
+      alert('Lançamento atualizado com sucesso!');
+      fecharModal();
+      location.reload();
+    })
+    .catch(error => {
+      alert('Erro ao atualizar: ' + error.message);
+    });
+});
+</script>
+
 </body>
 </html>
