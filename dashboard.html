@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <title>Dashboard - LucrouBem</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore-compat.js"></script>
   <style>
     body {
       margin: 0;
@@ -22,7 +25,7 @@
       position: fixed;
       top: 0;
       left: 0;
-      min-height: 350px;
+      bottom: 0;
       border-bottom-right-radius: 15px;
     }
 
@@ -99,21 +102,11 @@
 <body>
   <div class="sidebar">
     <h2>LucrouBem</h2>
-    <div class="menu-item">
-      <span>🏠</span> <span>Dashboard</span>
-    </div>
-    <div class="menu-item">
-      <span>➕</span> <span>Lançar Venda</span>
-    </div>
-    <div class="menu-item">
-      <span>💳</span> <span>Lançar Gasto</span>
-    </div>
-    <div class="menu-item">
-      <span>📊</span> <span>Relatórios</span>
-    </div>
-    <div class="menu-item">
-      <span>⬅️</span> <span>Sair</span>
-    </div>
+    <div class="menu-item" onclick="window.location.href='dashboard.html'"><span>🏠</span> <span>Dashboard</span></div>
+    <div class="menu-item" onclick="window.location.href='lancar_venda.html'"><span>➕</span> <span>Lancar Venda</span></div>
+    <div class="menu-item" onclick="window.location.href='lancar_gasto.html'"><span>💳</span> <span>Lancar Gasto</span></div>
+    <div class="menu-item" onclick="window.location.href='relatorios.html'"><span>📊</span> <span>Relatórios</span></div>
+    <div class="menu-item" onclick="logout()"><span>⬅️</span> <span>Sair</span></div>
   </div>
 
   <div class="main-content">
@@ -122,19 +115,19 @@
     <div class="cards">
       <div class="card">
         <h4>Vendas nos últimos 7 dias</h4>
-        <p><strong>R$ 1.540,00</strong></p>
+        <p><strong id="total-vendas">R$ 0,00</strong></p>
       </div>
       <div class="card">
         <h4>Gastos nos últimos 7 dias</h4>
-        <p><strong>R$ 960,00</strong></p>
+        <p><strong id="total-gastos">R$ 0,00</strong></p>
       </div>
       <div class="card">
         <h4>Lucro estimado</h4>
-        <p><strong>R$ 580,00</strong></p>
+        <p><strong id="lucro-estimado">R$ 0,00</strong></p>
       </div>
       <div class="card">
         <h4>Lucro acumulado no mês</h4>
-        <p><strong>R$ 2.870,00</strong></p>
+        <p><strong id="lucro-mensal">R$ 0,00</strong></p>
       </div>
     </div>
 
@@ -151,79 +144,66 @@
   </div>
 
   <script>
-    // Gráfico de barras: Lucro
-    const ctxBar = document.getElementById('barChart').getContext('2d');
-    new Chart(ctxBar, {
-      type: 'bar',
-      data: {
-        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-        datasets: [{
-          label: 'Lucro (R$)',
-          data: [120, 200, 180, 150, 220, 250, 290],
-          backgroundColor: '#2563eb'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        aspectRatio: 2
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
+      authDomain: "lucroubem.firebaseapp.com",
+      projectId: "lucroubem",
+      storageBucket: "lucroubem.firebasestorage.app",
+      messagingSenderId: "620372674751",
+      appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      const db = firebase.firestore();
+      const uid = user.uid;
+
+      // Buscar dados reais do Firestore (vendas, gastos)
+      const hoje = new Date();
+      const seteDiasAtras = new Date();
+      seteDiasAtras.setDate(hoje.getDate() - 7);
+
+      let totalVendas = 0;
+      let totalGastos = 0;
+
+      db.collection("vendas")
+        .where("uid", "==", uid)
+        .where("data", ">=", seteDiasAtras)
+        .get()
+        .then(snapshot => {
+          snapshot.forEach(doc => totalVendas += doc.data().valor);
+          document.getElementById("total-vendas").innerText = totalVendas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          atualizarLucro();
+        });
+
+      db.collection("gastos")
+        .where("uid", "==", uid)
+        .where("data", ">=", seteDiasAtras)
+        .get()
+        .then(snapshot => {
+          snapshot.forEach(doc => totalGastos += doc.data().valor);
+          document.getElementById("total-gastos").innerText = totalGastos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          atualizarLucro();
+        });
+
+      function atualizarLucro() {
+        const lucro = totalVendas - totalGastos;
+        document.getElementById("lucro-estimado").innerText = lucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById("lucro-mensal").innerText = lucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
       }
     });
 
-    // Gráfico de linha: Gastos
-    const ctxLine = document.getElementById('lineChart').getContext('2d');
-    new Chart(ctxLine, {
-      type: 'line',
-      data: {
-        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-        datasets: [{
-          label: 'Gastos (R$)',
-          data: [80, 130, 110, 140, 180, 160, 160],
-          borderColor: '#ef4444',
-          backgroundColor: 'rgba(239, 68, 68, 0.2)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 5,
-          pointBackgroundColor: '#ef4444'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        aspectRatio: 2
-      }
-    });
-  </script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
-    authDomain: "lucroubem.firebaseapp.com",
-    projectId: "lucroubem",
-    storageBucket: "lucroubem.firebasestorage.app",
-    messagingSenderId: "620372674751",
-    appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-
-  firebase.auth().onAuthStateChanged((user) => {
-    if (!user) {
-      window.location.href = "index.html"; // Redireciona se não estiver logado
+    function logout() {
+      firebase.auth().signOut().then(() => {
+        window.location.href = "index.html";
+      });
     }
-  });
-</script>
-  <button onclick="logout()">Sair</button>
-  <script>
-  function logout() {
-    firebase.auth().signOut().then(() => {
-      window.location.href = "index.html"; // Redireciona para login após logout
-    });
-  }
-</script>
- 
+  </script>
 </body>
 </html>
-
-
