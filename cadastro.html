@@ -127,5 +127,23 @@
         });
     }
   </script>
+<script>
+  document.getElementById('telefone').addEventListener('input', function (e) {
+    let x = e.target.value.replace(/\D/g, '').substring(0, 11);
+    let ddd = x.substring(0, 2);
+    let parte1 = x.substring(2, 7);
+    let parte2 = x.substring(7, 11);
+
+    if (x.length > 7) {
+      e.target.value = `(${ddd}) ${parte1}-${parte2}`;
+    } else if (x.length > 2) {
+      e.target.value = `(${ddd}) ${parte1}`;
+    } else if (x.length > 0) {
+      e.target.value = `(${ddd}`;
+    }
+  });
+</script>
+
 </body>
 </html>
+
