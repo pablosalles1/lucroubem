@@ -6,9 +6,10 @@
   <title>LucrouBem - Login</title>
   <link rel="stylesheet" href="style.css">
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
+  <!-- Firebase SDK (modo compatível para HTML puro) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth-compat.js"></script>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
@@ -37,13 +38,35 @@
 
   <script>
     function login() {
-      const email = document.getElementById("login-email").value;
+      const email = document.getElementById("login-email").value.trim();
       const password = document.getElementById("login-password").value;
+
+      if (!email || !password) {
+        alert("Preencha todos os campos!");
+        return;
+      }
+
       firebase.auth().signInWithEmailAndPassword(email, password)
         .then(() => {
           window.location.href = "dashboard.html";
         })
-        .catch(error => alert("Erro ao entrar: " + error.message));
+        .catch(error => {
+          let msg;
+          switch (error.code) {
+            case "auth/user-not-found":
+              msg = "Usuário não encontrado.";
+              break;
+            case "auth/wrong-password":
+              msg = "Senha incorreta.";
+              break;
+            case "auth/invalid-email":
+              msg = "E-mail inválido.";
+              break;
+            default:
+              msg = error.message;
+          }
+          alert("Erro ao entrar: " + msg);
+        });
     }
 
     firebase.auth().onAuthStateChanged(user => {
