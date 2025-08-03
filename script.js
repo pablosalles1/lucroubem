@@ -1,4 +1,4 @@
-// script.js atualizado para filtros e gráficos dinâmicos no painel de relatórios
+// script.js atualizado com filtros, gráficos e cadastro com mensagens personalizadas
 
 const db = firebase.firestore();
 let comparativoChart, categoriasChart;
@@ -127,4 +127,45 @@ function mostrarResumo(vendas, gastos) {
 
 function logout() {
   firebase.auth().signOut().then(() => window.location.href = "index.html");
+}
+
+// Função de cadastro com mensagens personalizadas
+function registrar() {
+  const nome = document.getElementById("nome").value;
+  const telefone = document.getElementById("telefone").value;
+  const negocio = document.getElementById("negocio").value;
+  const email = document.getElementById("email").value;
+  const senha = document.getElementById("senha").value;
+
+  firebase.auth().createUserWithEmailAndPassword(email, senha)
+    .then(userCredential => {
+      const user = userCredential.user;
+      return db.collection("usuarios").doc(user.uid).set({
+        nome, telefone, negocio, email
+      });
+    })
+    .then(() => {
+      alert("Cadastro realizado com sucesso!");
+      window.location.href = "dashboard.html";
+    })
+    .catch(error => {
+      let mensagem;
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          mensagem = "Este e-mail já está cadastrado. Tente fazer login.";
+          break;
+        case 'auth/invalid-email':
+          mensagem = "O e-mail digitado não é válido.";
+          break;
+        case 'auth/weak-password':
+          mensagem = "A senha é muito fraca. Use pelo menos 6 caracteres.";
+          break;
+        case 'auth/network-request-failed':
+          mensagem = "Sem conexão com a internet. Verifique sua rede.";
+          break;
+        default:
+          mensagem = "Erro ao cadastrar: " + error.message;
+      }
+      alert(mensagem);
+    });
 }
