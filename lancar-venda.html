@@ -2,118 +2,145 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Lançar Venda</title>
-  <style>
-    body {
-      background-color: #e6f0fa;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 400px;
-      margin: 60px auto;
-      background: white;
-      padding: 30px 40px;
-      border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    }
-
-    h1 {
-      text-align: center;
-      color: #1d4ed8;
-    }
-
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 15px;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 15px;
-    }
-
-    .buttons {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 15px;
-    }
-
-    button {
-      background-color: #1d4ed8;
-      color: white;
-      border: none;
-      padding: 10px 25px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 15px;
-    }
-
-    .small-button {
-      font-size: 13px;
-      padding: 4px 10px;
-      margin-top: 0;
-      margin-bottom: 10px;
-      display: inline-block;
-    }
-
-    #novaCategoriaContainer,
-    #novaFormaPagamentoContainer {
-      display: none;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lançar Venda - LucrouBem</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Lançar Venda</h1>
   <div class="container">
-    <form id="form-venda" onsubmit="salvarVenda(); return false;">
-      <label for="valor">Valor</label>
-      <input type="text" id="valor" name="valor" placeholder="R$ 0,00" oninput="formatarValor(this)" required />
+    <h1>Lançar Venda</h1>
+    <form id="venda-form">
+      <label>Data</label>
+      <input type="date" id="data" required />
 
-      <label for="data">Data</label>
-      <input type="date" id="data" name="data" required />
+      <label>Cliente (opcional)</label>
+      <input type="text" id="cliente" placeholder="Nome do cliente" />
 
-      <label for="descricao">Descrição</label>
-      <input type="text" id="descricao" name="descricao" required />
-
-      <label for="cliente">Cliente (opcional)</label>
-      <input type="text" id="cliente" name="cliente" />
-
-      <label for="categoria">Categoria</label>
-      <select id="categoria" name="categoria"></select>
-      <button type="button" class="small-button" onclick="mostrarCampoCategoria()">+ Adicionar Categoria</button>
-      <div id="novaCategoriaContainer">
-        <label for="novaCategoria">Nova Categoria</label>
-        <input type="text" id="novaCategoria" name="novaCategoria" placeholder="Ex: Doce, Lanche" />
+      <div id="produtos-container">
+        <!-- Produtos adicionados aparecerão aqui -->
       </div>
 
-      <label for="formaPagamento">Forma de Pagamento</label>
-      <select id="formaPagamento" name="formaPagamento"></select>
-      <button type="button" class="small-button" onclick="mostrarCampoForma()">+ Adicionar Forma</button>
-      <div id="novaFormaPagamentoContainer">
-        <label for="novaForma">Nova Forma</label>
-        <input type="text" id="novaForma" name="novaForma" placeholder="Ex: Transferência" />
-      </div>
+      <button type="button" onclick="adicionarProduto()">+ Adicionar Produto</button>
 
-      <div class="buttons">
-        <button type="submit">Salvar</button>
-        <button type="button" onclick="window.history.back()">Voltar</button>
-      </div>
+      <label>Forma de Pagamento</label>
+      <select id="forma-pagamento" required>
+        <option value="">Selecione</option>
+        <option value="Dinheiro">Dinheiro</option>
+        <option value="Pix">Pix</option>
+        <option value="Cartão">Cartão</option>
+      </select>
+
+      <button type="submit">Salvar</button>
+      <button type="button" onclick="voltar()">Voltar</button>
     </form>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js"></script>
-  <script src="script.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
+      authDomain: "lucroubem.firebaseapp.com",
+      projectId: "lucroubem",
+      storageBucket: "lucroubem.appspot.com",
+      messagingSenderId: "620372674751",
+      appId: "1:620372674751:web:bcfdf762160345b7be1e0a",
+      databaseURL: "https://lucroubem-default-rtdb.firebaseio.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    let produtos = [];
+
+    function adicionarProduto() {
+      const container = document.getElementById("produtos-container");
+
+      const div = document.createElement("div");
+      div.className = "produto-item";
+      const index = produtos.length;
+
+      div.innerHTML = `
+        <label>Produto</label>
+        <select onchange="atualizarPreco(${index})" id="produto-${index}">
+          <option value="">Selecione</option>
+        </select>
+        <label>Preço</label>
+        <input type="number" step="0.01" id="preco-${index}" required />
+        <label>Quantidade</label>
+        <input type="number" min="1" value="1" id="quantidade-${index}" required />
+      `;
+      container.appendChild(div);
+      produtos.push(index);
+      carregarProdutos(index);
+    }
+
+    function carregarProdutos(index) {
+      const select = document.getElementById(`produto-${index}`);
+      db.ref("produtos").once("value", snapshot => {
+        snapshot.forEach(child => {
+          const option = document.createElement("option");
+          option.value = child.key;
+          option.textContent = child.val().nome;
+          option.dataset.preco = child.val().preco;
+          select.appendChild(option);
+        });
+      });
+    }
+
+    function atualizarPreco(index) {
+      const select = document.getElementById(`produto-${index}`);
+      const precoInput = document.getElementById(`preco-${index}`);
+      const selected = select.options[select.selectedIndex];
+      precoInput.value = selected.dataset.preco || "";
+    }
+
+    document.getElementById("venda-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const user = auth.currentUser;
+      if (!user) {
+        alert("Usuário não autenticado.");
+        return;
+      }
+
+      const data = document.getElementById("data").value;
+      const cliente = document.getElementById("cliente").value;
+      const formaPagamento = document.getElementById("forma-pagamento").value;
+
+      const itens = produtos.map(index => {
+        const produtoId = document.getElementById(`produto-${index}`).value;
+        const nome = document.getElementById(`produto-${index}`).selectedOptions[0]?.textContent;
+        const preco = parseFloat(document.getElementById(`preco-${index}`).value);
+        const quantidade = parseInt(document.getElementById(`quantidade-${index}`).value);
+        return { produtoId, nome, preco, quantidade };
+      });
+
+      const valorTotal = itens.reduce((soma, item) => soma + item.preco * item.quantidade, 0);
+
+      const venda = {
+        data,
+        cliente,
+        formaPagamento,
+        itens,
+        valorTotal,
+        usuario: user.uid,
+        timestamp: Date.now()
+      };
+
+      await db.ref("vendas").push(venda);
+      alert("Venda salva com sucesso!");
+      location.href = "dashboard.html";
+    });
+
+    function voltar() {
+      window.history.back();
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (!user) window.location.href = "index.html";
+    });
+  </script>
 </body>
 </html>
