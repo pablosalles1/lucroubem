@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Relatórios - LucrouBem</title>
-  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css" />
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
       background-color: #e6f0fa;
     }
+
     .sidebar {
       width: 220px;
       background-color: #2563eb;
@@ -22,93 +23,104 @@
       position: fixed;
       top: 0;
       left: 0;
-      bottom: 0;
+      height: 100vh;
+      border-bottom-right-radius: 15px;
     }
+
     .sidebar h2 {
       margin-top: 0;
       font-size: 22px;
     }
+
     .menu-item {
       display: flex;
       align-items: center;
       gap: 10px;
       cursor: pointer;
     }
+
     .menu-item:hover {
       opacity: 0.9;
     }
+
     .menu-item svg {
       width: 18px;
       height: 18px;
     }
+
     .main-content {
       margin-left: 240px;
       padding: 30px;
     }
-    .filtros {
+
+    .filters {
       display: flex;
-      gap: 10px;
       flex-wrap: wrap;
-      margin-bottom: 20px;
+      gap: 15px;
+      margin-bottom: 30px;
     }
-    .filtros input, .filtros select, .filtros button {
+
+    .filters input, .filters select, .filters button {
       padding: 8px;
       font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
-    .card {
+
+    .filters button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .chart-box {
       background: white;
+      padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      padding: 20px;
-      margin-bottom: 20px;
+      max-width: 100%;
+    }
+
+    .chart-box canvas {
+      max-width: 100%;
+      max-height: 300px;
+      margin: auto;
+      display: block;
     }
   </style>
 </head>
 <body>
   <div class="sidebar">
     <h2>LucrouBem</h2>
-    <div class="menu-item" onclick="window.location.href='dashboard.html'">
-      <span>🏠</span> <span>Dashboard</span>
-    </div>
-    <div class="menu-item" onclick="window.location.href='lancar-venda.html'">
-      <span>➕</span> <span>Lancar Venda</span>
-    </div>
-    <div class="menu-item" onclick="window.location.href='lancar-gasto.html'">
-      <span>💳</span> <span>Lancar Gasto</span>
-    </div>
-    <div class="menu-item" onclick="window.location.href='relatorios.html'">
-      <span>📊</span> <span>Relatórios</span>
-    </div>
-    <div class="menu-item" onclick="logout()">
-      <span>↩️</span> <span>Sair</span>
-    </div>
+    <div class="menu-item" onclick="window.location.href='dashboard.html'">🏠 Dashboard</div>
+    <div class="menu-item" onclick="window.location.href='lancar-venda.html'">➕ Lançar Venda</div>
+    <div class="menu-item" onclick="window.location.href='lancar-gasto.html'">💳 Lançar Gasto</div>
+    <div class="menu-item" onclick="window.location.href='relatorios.html'">📊 Relatórios</div>
+    <div class="menu-item" onclick="logout()">⬅️ Sair</div>
   </div>
 
   <div class="main-content">
     <h1>Relatórios</h1>
-    <div class="filtros">
-      <label>De:</label>
-      <input type="date">
-      <label>Até:</label>
-      <input type="date">
-      <label>Categoria (Venda):</label>
-      <select><option value="">Todas</option></select>
-      <label>Categoria (Gasto):</label>
-      <select><option value="">Todas</option></select>
-      <button>Aplicar Filtros</button>
+    <div class="filters">
+      <input type="date" id="dataInicio">
+      <input type="date" id="dataFim">
+      <select id="categoriaVenda">
+        <option value="">Categoria (Venda)</option>
+      </select>
+      <select id="categoriaGasto">
+        <option value="">Categoria (Gasto)</option>
+      </select>
+      <button onclick="aplicarFiltros()">Aplicar Filtros</button>
     </div>
 
-    <div class="card">
-      <h3>Lucro vs Gastos</h3>
-      <canvas id="grafico-lucro"></canvas>
-    </div>
-
-    <div class="card">
-      <h3>Gastos por Categoria</h3>
-      <canvas id="grafico-categoria"></canvas>
+    <div class="chart-box">
+      <h3>Faturamento por dia</h3>
+      <canvas id="graficoFaturamento"></canvas>
     </div>
   </div>
 
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
   <script>
@@ -120,6 +132,7 @@
       messagingSenderId: "620372674751",
       appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
     };
+
     firebase.initializeApp(firebaseConfig);
 
     firebase.auth().onAuthStateChanged((user) => {
@@ -133,44 +146,29 @@
         window.location.href = "index.html";
       });
     }
-  </script>
 
-  <script>
-    // Gráficos fictícios
-    const ctx1 = document.getElementById('grafico-lucro').getContext('2d');
-    new Chart(ctx1, {
-      type: 'bar',
+    // Exemplo de gráfico com dados estáticos — será dinâmico com filtros
+    const ctx = document.getElementById("graficoFaturamento").getContext("2d");
+    new Chart(ctx, {
+      type: "bar",
       data: {
-        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-        datasets: [
-          {
-            label: 'Lucro',
-            data: [200, 250, 220, 300, 280, 260, 310],
-            backgroundColor: '#2563eb'
-          },
-          {
-            label: 'Gastos',
-            data: [150, 200, 180, 190, 210, 230, 200],
-            backgroundColor: '#ef4444'
-          }
-        ]
-      },
-      options: { responsive: true, maintainAspectRatio: false, aspectRatio: 2 }
-    });
-
-    const ctx2 = document.getElementById('grafico-categoria').getContext('2d');
-    new Chart(ctx2, {
-      type: 'pie',
-      data: {
-        labels: ['Ingredientes', 'Embalagens', 'Marketing'],
+        labels: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
         datasets: [{
-          label: 'Gastos por Categoria',
-          data: [500, 300, 200],
-          backgroundColor: ['#facc15', '#34d399', '#60a5fa']
+          label: "Faturamento (R$)",
+          data: [120, 220, 180, 150, 230, 270, 300],
+          backgroundColor: "#2563eb"
         }]
       },
-      options: { responsive: true, maintainAspectRatio: false, aspectRatio: 2 }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        aspectRatio: 2
+      }
     });
+
+    function aplicarFiltros() {
+      alert("Funcionalidade de filtro será implementada.");
+    }
   </script>
 </body>
 </html>
