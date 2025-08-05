@@ -2,12 +2,95 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lançar Venda - LucrouBem</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore-compat.js"></script>
+  <style>
+    .form-container {
+      max-width: 500px;
+      margin: 50px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+
+    .form-container h2 {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    .form-group button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .form-group button:hover {
+      background-color: #1d4ed8;
+    }
+
+    .form-group input[type="date"] {
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Lançar Venda</h2>
+    <div class="form-group">
+      <label for="dataVenda">Data da Venda</label>
+      <input type="date" id="dataVenda">
+    </div>
+
+    <div class="form-group">
+      <label for="produto">Produto</label>
+      <select id="produto">
+        <option value="">Selecione um produto</option>
+      </select>
+      <button onclick="adicionarProdutoRapido()">+ Adicionar Produto</button>
+    </div>
+
+    <div class="form-group">
+      <label for="preco">Preço (editável)</label>
+      <input type="number" id="preco" placeholder="Preço do produto">
+    </div>
+
+    <div class="form-group">
+      <label for="quantidade">Quantidade</label>
+      <input type="number" id="quantidade" value="1">
+    </div>
+
+    <div class="form-group">
+      <button onclick="salvarVenda()">Salvar Venda</button>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
@@ -17,134 +100,82 @@
       messagingSenderId: "620372674751",
       appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
     };
+
     firebase.initializeApp(firebaseConfig);
-  </script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f4f8;
-      padding: 20px;
-    }
-    .form-container {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      max-width: 500px;
-      margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    }
-    h2 { text-align: center; }
-    label { display: block; margin-top: 10px; }
-    input, select, button {
-      width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc;
-    }
-    .produto-item {
-      border: 1px solid #ddd;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 6px;
-      background: #f9f9f9;
-    }
-    .produto-item input { width: calc(50% - 10px); display: inline-block; margin-right: 10px; }
-    .produto-item input:last-child { margin-right: 0; }
-  </style>
-</head>
-<body>
-  <div class="form-container">
-    <h2>Lançar Venda</h2>
-    <label for="data">Data da Venda</label>
-    <input type="date" id="data" required>
-
-    <label for="produtoSelect">Produto</label>
-    <select id="produtoSelect"></select>
-
-    <label for="preco">Preço (editável)</label>
-    <input type="number" id="preco" placeholder="Preço do produto">
-
-    <label for="quantidade">Quantidade</label>
-    <input type="number" id="quantidade" placeholder="Qtd" value="1">
-
-    <button onclick="adicionarProdutoLista()">Adicionar Produto</button>
-
-    <div id="listaProdutos"></div>
-
-    <button onclick="salvarVenda()" style="margin-top: 20px; background: #2563eb; color: white;">Salvar Venda</button>
-  </div>
-
-  <script>
     const db = firebase.firestore();
-    const auth = firebase.auth();
-    let produtosCadastrados = [];
-    let itensVenda = [];
 
-    auth.onAuthStateChanged(user => {
-      if (!user) return (window.location.href = "index.html");
-      carregarProdutos(user.uid);
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      } else {
+        carregarProdutos(user.uid);
+      }
     });
 
     function carregarProdutos(uid) {
-      db.collection("produtos").where("uid", "==", uid).get().then(snapshot => {
-        produtosCadastrados = [];
-        const select = document.getElementById("produtoSelect");
-        select.innerHTML = '<option value="">Selecione ou digite um novo</option>';
+      const produtoSelect = document.getElementById('produto');
+      db.collection("usuarios").doc(uid).collection("produtos").get().then(snapshot => {
         snapshot.forEach(doc => {
-          const dados = doc.data();
-          produtosCadastrados.push({ id: doc.id, ...dados });
-          const opt = document.createElement("option");
-          opt.value = dados.nome;
-          opt.textContent = dados.nome;
-          select.appendChild(opt);
-        });
-
-        select.addEventListener("change", () => {
-          const produto = produtosCadastrados.find(p => p.nome === select.value);
-          if (produto) {
-            document.getElementById("preco").value = produto.preco;
-          } else {
-            document.getElementById("preco").value = "";
-          }
+          const option = document.createElement("option");
+          option.value = doc.data().nome;
+          option.textContent = doc.data().nome;
+          option.setAttribute("data-preco", doc.data().preco);
+          produtoSelect.appendChild(option);
         });
       });
     }
 
-    function adicionarProdutoLista() {
-      const nome = document.getElementById("produtoSelect").value;
-      const preco = parseFloat(document.getElementById("preco").value);
-      const quantidade = parseInt(document.getElementById("quantidade").value);
-      if (!nome || isNaN(preco) || isNaN(quantidade)) return alert("Preencha todos os campos do produto");
-      itensVenda.push({ nome, preco, quantidade });
-      atualizarLista();
-    }
+    document.getElementById("produto").addEventListener("change", function () {
+      const preco = this.selectedOptions[0].getAttribute("data-preco");
+      document.getElementById("preco").value = preco;
+    });
 
-    function atualizarLista() {
-      const div = document.getElementById("listaProdutos");
-      div.innerHTML = "";
-      itensVenda.forEach((item, i) => {
-        div.innerHTML += `<div class='produto-item'>
-          <strong>${item.nome}</strong><br>
-          Quantidade: ${item.quantidade}<br>
-          Preço unitário: R$ ${item.preco.toFixed(2)}<br>
-          Subtotal: R$ ${(item.preco * item.quantidade).toFixed(2)}
-        </div>`;
+    function adicionarProdutoRapido() {
+      const nome = prompt("Nome do novo produto:");
+      const preco = prompt("Preço do novo produto:");
+
+      const user = firebase.auth().currentUser;
+      if (!user || !nome || !preco) return;
+
+      db.collection("usuarios").doc(user.uid).collection("produtos").add({
+        nome,
+        preco: parseFloat(preco)
+      }).then(() => {
+        alert("Produto adicionado com sucesso!");
+        location.reload();
       });
     }
 
     function salvarVenda() {
-      const user = auth.currentUser;
-      const data = document.getElementById("data").value;
-      if (!data || itensVenda.length === 0) return alert("Informe a data e adicione pelo menos um produto.");
-      const total = itensVenda.reduce((s, item) => s + (item.preco * item.quantidade), 0);
+      const dataVenda = document.getElementById("dataVenda").value;
+      const produto = document.getElementById("produto").value;
+      const preco = parseFloat(document.getElementById("preco").value);
+      const quantidade = parseInt(document.getElementById("quantidade").value);
 
-      db.collection("vendas").add({
-        uid: user.uid,
-        data,
-        produtos: itensVenda,
-        valor: total
+      const user = firebase.auth().currentUser;
+      if (!user || !produto || !preco || !dataVenda) {
+        alert("Preencha todos os campos obrigatórios.");
+        return;
+      }
+
+      db.collection("usuarios").doc(user.uid).collection("vendas").add({
+        data: dataVenda,
+        produto,
+        preco,
+        quantidade,
+        total: preco * quantidade,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
-        alert("Venda salva com sucesso!");
+        alert("Venda lançada com sucesso!");
         window.location.href = "dashboard.html";
       });
     }
+
+    // Define a data atual automaticamente no campo de data
+    window.onload = function () {
+      const hoje = new Date().toISOString().split('T')[0];
+      document.getElementById("dataVenda").value = hoje;
+    };
   </script>
 </body>
 </html>
