@@ -2,12 +2,124 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Lançar Venda - LucrouBem</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Lançar Venda</title>
   <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-database.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .form-container {
+      max-width: 500px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #1e3a8a;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+
+    button {
+      margin-top: 25px;
+      background-color: #2563eb;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background-color: #1e40af;
+    }
+
+    .add-button {
+      background-color: #e5e7eb;
+      color: #111827;
+      font-weight: normal;
+      margin-top: 10px;
+    }
+
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 220px;
+      background: #2563eb;
+      padding: 20px;
+      color: white;
+    }
+
+    .sidebar h2 {
+      font-size: 22px;
+      margin-bottom: 30px;
+    }
+
+    .menu-item {
+      margin-bottom: 15px;
+      cursor: pointer;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .main {
+      margin-left: 240px;
+      padding: 40px 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>LucrouBem</h2>
+    <div class="menu-item" onclick="window.location.href='dashboard.html'">🏠 Dashboard</div>
+    <div class="menu-item" onclick="window.location.href='lancar-venda.html'">➕ Lançar Venda</div>
+    <div class="menu-item" onclick="window.location.href='lancar-gasto.html'">💳 Lançar Gasto</div>
+    <div class="menu-item" onclick="window.location.href='relatorios.html'">📊 Relatórios</div>
+    <div class="menu-item" onclick="window.location.href='produtos.html'">📦 Produtos</div>
+    <div class="menu-item" onclick="logout()">⬅️ Sair</div>
+  </div>
+
+  <div class="main">
+    <div class="form-container">
+      <h2>Lançar Venda</h2>
+
+      <label>Data da Venda</label>
+      <input type="date" id="data" />
+
+      <label>Produto</label>
+      <select id="produto"></select>
+      <button class="add-button" onclick="adicionarProdutoRapido()">+ Adicionar Produto</button>
+
+      <label>Preço (editável)</label>
+      <input type="number" id="preco" placeholder="Preço do produto" />
+
+      <label>Quantidade</label>
+      <input type="number" id="quantidade" value="1" />
+
+      <button onclick="salvarVenda()">Salvar Venda</button>
+    </div>
+  </div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
@@ -17,158 +129,78 @@
       messagingSenderId: "620372674751",
       appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
     };
+
     firebase.initializeApp(firebaseConfig);
-  </script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f1f5f9;
-      margin: 0;
-      padding: 0;
-    }
+    const db = firebase.firestore();
 
-    .container {
-      max-width: 500px;
-      margin: 40px auto;
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.05);
-    }
-
-    h2 {
-      text-align: center;
-      color: #1e3a8a;
-      margin-bottom: 25px;
-    }
-
-    label {
-      font-weight: bold;
-      margin-top: 15px;
-      display: block;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-    }
-
-    button {
-      margin-top: 20px;
-      width: 100%;
-      background-color: #2563eb;
-      color: white;
-      padding: 12px;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #1d4ed8;
-    }
-
-    #adicionarProduto {
-      background-color: #e5e7eb;
-      color: #111827;
-      margin-top: 10px;
-    }
-
-    #adicionarProduto:hover {
-      background-color: #d1d5db;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2>Lançar Venda</h2>
-    <form id="vendaForm">
-      <label for="data">Data da Venda</label>
-      <input type="date" id="data" name="data" required />
-
-      <label for="produto">Produto</label>
-      <select id="produto" required></select>
-
-      <button type="button" id="adicionarProduto">+ Adicionar Produto</button>
-
-      <label for="preco">Preço (editável)</label>
-      <input type="number" id="preco" step="0.01" placeholder="Preço do produto" required />
-
-      <label for="quantidade">Quantidade</label>
-      <input type="number" id="quantidade" min="1" value="1" required />
-
-      <button type="submit">Salvar Venda</button>
-    </form>
-  </div>
-
-  <script>
-    // Preencher a data atual por padrão
-    document.addEventListener("DOMContentLoaded", () => {
-      const hoje = new Date().toISOString().split("T")[0];
-      document.getElementById("data").value = hoje;
-      carregarProdutos();
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) window.location.href = "index.html";
     });
 
+    const dataInput = document.getElementById("data");
+    const hoje = new Date().toISOString().split("T")[0];
+    dataInput.value = hoje;
+
+    const produtoSelect = document.getElementById("produto");
+    const precoInput = document.getElementById("preco");
+
     function carregarProdutos() {
-      const select = document.getElementById("produto");
-      firebase.database().ref("produtos").on("value", (snapshot) => {
-        select.innerHTML = "";
-        snapshot.forEach((child) => {
+      produtoSelect.innerHTML = "<option disabled selected>Selecione um produto</option>";
+      db.collection("produtos").get().then(snapshot => {
+        snapshot.forEach(doc => {
           const option = document.createElement("option");
-          option.value = child.key;
-          option.textContent = `${child.val().nome}`;
-          option.dataset.preco = child.val().preco;
-          select.appendChild(option);
+          option.value = doc.id;
+          option.textContent = doc.data().nome;
+          option.dataset.preco = doc.data().preco;
+          produtoSelect.appendChild(option);
         });
-        if (select.options.length > 0) {
-          const preco = select.options[0].dataset.preco;
-          document.getElementById("preco").value = preco;
-        }
       });
     }
 
-    document.getElementById("produto").addEventListener("change", (e) => {
-      const preco = e.target.selectedOptions[0].dataset.preco;
-      document.getElementById("preco").value = preco;
+    produtoSelect.addEventListener("change", () => {
+      const selectedOption = produtoSelect.options[produtoSelect.selectedIndex];
+      precoInput.value = selectedOption.dataset.preco || "";
     });
 
-    document.getElementById("adicionarProduto").addEventListener("click", () => {
+    function adicionarProdutoRapido() {
       const nome = prompt("Digite o nome do produto:");
       const preco = prompt("Digite o preço do produto:");
       if (nome && preco) {
-        const ref = firebase.database().ref("produtos").push();
-        ref.set({ nome, preco });
+        db.collection("produtos").add({ nome, preco: parseFloat(preco) }).then(() => {
+          carregarProdutos(); // Atualiza a lista
+          alert("Produto adicionado com sucesso!");
+        });
       }
-    });
+    }
 
-    document.getElementById("vendaForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const data = document.getElementById("data").value;
-      const produto = document.getElementById("produto").value;
-      const nomeProduto = document.getElementById("produto").selectedOptions[0].textContent;
-      const preco = parseFloat(document.getElementById("preco").value);
+    function salvarVenda() {
+      const data = dataInput.value;
+      const produtoId = produtoSelect.value;
+      const preco = parseFloat(precoInput.value);
       const quantidade = parseInt(document.getElementById("quantidade").value);
 
-      const venda = {
+      if (!data || !produtoId || isNaN(preco) || isNaN(quantidade)) {
+        alert("Preencha todos os campos corretamente.");
+        return;
+      }
+
+      db.collection("vendas").add({
         data,
-        produto,
-        nomeProduto,
+        produtoId,
         preco,
         quantidade,
-        total: preco * quantidade
-      };
-
-      firebase.database().ref("vendas").push(venda).then(() => {
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
         alert("Venda salva com sucesso!");
-        document.getElementById("vendaForm").reset();
-        document.getElementById("data").value = new Date().toISOString().split("T")[0];
+        location.reload();
       });
-    });
+    }
+
+    function logout() {
+      firebase.auth().signOut().then(() => window.location.href = "index.html");
+    }
+
+    carregarProdutos();
   </script>
 </body>
 </html>
