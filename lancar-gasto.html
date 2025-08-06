@@ -1,116 +1,72 @@
+<!-- Troque seu arquivo atual pelo seguinte: -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Lançar Gasto</title>
-  <style>
-    body {
-      background-color: #e6f0fa;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 400px;
-      margin: 60px auto;
-      background: white;
-      padding: 30px 40px;
-      border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    }
-
-    h1 {
-      text-align: center;
-      color: #1d4ed8;
-    }
-
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 15px;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 15px;
-    }
-
-    .buttons {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 15px;
-    }
-
-    button {
-      background-color: #1d4ed8;
-      color: white;
-      border: none;
-      padding: 10px 25px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 15px;
-    }
-
-    .small-button {
-      font-size: 13px;
-      padding: 4px 10px;
-      margin-top: 0;
-      margin-bottom: 10px;
-      display: inline-block;
-    }
-
-    #novaCategoriaContainer,
-    #novaFormaPagamentoContainer {
-      display: none;
-    }
-  </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Lançar Gasto</h1>
   <div class="container">
-    <form id="form-gasto" onsubmit="salvarGasto(); return false;">
-      <label for="valor">Valor</label>
-      <input type="text" id="valor" name="valor" placeholder="R$ 0,00" oninput="formatarValor(this)" required />
+    <h2>Lançar Gasto</h2>
+    <label>Data</label>
+    <input type="date" id="data" />
 
-      <label for="data">Data</label>
-      <input type="date" id="data" name="data" required />
+    <label>Descrição</label>
+    <input type="text" id="descricao" />
 
-      <label for="descricao">Descrição</label>
-      <input type="text" id="descricao" name="descricao" required />
+    <label>Valor</label>
+    <input type="number" id="valor" />
 
-      <label for="categoria">Categoria</label>
-      <select id="categoria" name="categoria"></select>
-      <button type="button" class="small-button" onclick="mostrarCampoCategoria()">+ Adicionar Categoria</button>
-      <div id="novaCategoriaContainer">
-        <label for="novaCategoria">Nova Categoria</label>
-        <input type="text" id="novaCategoria" name="novaCategoria" placeholder="Ex: Aluguel" />
-      </div>
-
-      <label for="formaPagamento">Forma de Pagamento</label>
-      <select id="formaPagamento" name="formaPagamento"></select>
-      <button type="button" class="small-button" onclick="mostrarCampoForma()">+ Adicionar Forma</button>
-      <div id="novaFormaPagamentoContainer">
-        <label for="novaForma">Nova Forma</label>
-        <input type="text" id="novaForma" name="novaForma" placeholder="Ex: Transferência" />
-      </div>
-
-      <div class="buttons">
-        <button type="submit">Salvar</button>
-        <button type="button" onclick="window.history.back()">Voltar</button>
-      </div>
-    </form>
+    <button onclick="salvarGasto()">Salvar</button>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js"></script>
-  <script src="script.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
+      authDomain: "lucroubem.firebaseapp.com",
+      projectId: "lucroubem",
+      storageBucket: "lucroubem.appspot.com",
+      messagingSenderId: "620372674751",
+      appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const dataInput = document.getElementById("data");
+    const hoje = new Date().toISOString().split("T")[0];
+    dataInput.value = hoje;
+
+    function salvarGasto() {
+      const data = document.getElementById("data").value;
+      const descricao = document.getElementById("descricao").value;
+      const valor = parseFloat(document.getElementById("valor").value);
+      const user = firebase.auth().currentUser;
+
+      if (!data || !descricao || isNaN(valor)) {
+        alert("Preencha todos os campos corretamente.");
+        return;
+      }
+
+      db.collection("gastos").add({
+        uid: user.uid,
+        data,
+        descricao,
+        valor,
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert("Gasto salvo com sucesso!");
+        location.reload();
+      });
+    }
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) window.location.href = "index.html";
+    });
+  </script>
 </body>
 </html>
