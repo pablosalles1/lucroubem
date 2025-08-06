@@ -138,18 +138,20 @@
     const precoInput = document.getElementById("preco");
 
     firebase.auth().onAuthStateChanged(user => {
-      if (!user) window.location.href = "index.html";
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
 
-      // Definir a data de hoje após o carregamento
       const hoje = new Date().toISOString().split("T")[0];
       dataInput.value = hoje;
 
-      carregarProdutos();
+      carregarProdutos(user.uid);
     });
 
-    function carregarProdutos() {
+    function carregarProdutos(uid) {
       produtoSelect.innerHTML = "<option disabled selected>Selecione um produto</option>";
-      db.collection("produtos").get().then(snapshot => {
+      db.collection("produtos").where("uid", "==", uid).get().then(snapshot => {
         snapshot.forEach(doc => {
           const dados = doc.data();
           const option = document.createElement("option");
@@ -169,13 +171,19 @@
     function adicionarProdutoRapido() {
       const nome = prompt("Digite o nome do produto:");
       const preco = prompt("Digite o preço do produto:");
-      if (nome && preco) {
+      const user = firebase.auth().currentUser;
+
+      if (nome && preco && user) {
         db.collection("produtos").add({
+          uid: user.uid,
           nome,
           preco: parseFloat(preco)
         }).then(() => {
-          carregarProdutos();
+          carregarProdutos(user.uid);
           alert("Produto adicionado com sucesso!");
+        }).catch(error => {
+          console.error("Erro ao salvar produto:", error);
+          alert("Erro ao salvar produto.");
         });
       }
     }
