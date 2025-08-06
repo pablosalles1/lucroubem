@@ -133,25 +133,29 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    firebase.auth().onAuthStateChanged(user => {
-      if (!user) window.location.href = "index.html";
-    });
-
     const dataInput = document.getElementById("data");
-    const hoje = new Date().toISOString().split("T")[0];
-    dataInput.value = hoje;
-
     const produtoSelect = document.getElementById("produto");
     const precoInput = document.getElementById("preco");
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) window.location.href = "index.html";
+
+      // Definir a data de hoje após o carregamento
+      const hoje = new Date().toISOString().split("T")[0];
+      dataInput.value = hoje;
+
+      carregarProdutos();
+    });
 
     function carregarProdutos() {
       produtoSelect.innerHTML = "<option disabled selected>Selecione um produto</option>";
       db.collection("produtos").get().then(snapshot => {
         snapshot.forEach(doc => {
+          const dados = doc.data();
           const option = document.createElement("option");
           option.value = doc.id;
-          option.textContent = doc.data().nome;
-          option.dataset.preco = doc.data().preco;
+          option.textContent = dados.nome;
+          option.dataset.preco = dados.preco;
           produtoSelect.appendChild(option);
         });
       });
@@ -166,8 +170,11 @@
       const nome = prompt("Digite o nome do produto:");
       const preco = prompt("Digite o preço do produto:");
       if (nome && preco) {
-        db.collection("produtos").add({ nome, preco: parseFloat(preco) }).then(() => {
-          carregarProdutos(); // Atualiza a lista
+        db.collection("produtos").add({
+          nome,
+          preco: parseFloat(preco)
+        }).then(() => {
+          carregarProdutos();
           alert("Produto adicionado com sucesso!");
         });
       }
@@ -178,6 +185,7 @@
       const produtoId = produtoSelect.value;
       const preco = parseFloat(precoInput.value);
       const quantidade = parseInt(document.getElementById("quantidade").value);
+      const user = firebase.auth().currentUser;
 
       if (!data || !produtoId || isNaN(preco) || isNaN(quantidade)) {
         alert("Preencha todos os campos corretamente.");
@@ -185,10 +193,12 @@
       }
 
       db.collection("vendas").add({
+        uid: user.uid,
         data,
         produtoId,
         preco,
         quantidade,
+        valor: preco * quantidade,
         criadoEm: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
         alert("Venda salva com sucesso!");
@@ -199,8 +209,6 @@
     function logout() {
       firebase.auth().signOut().then(() => window.location.href = "index.html");
     }
-
-    carregarProdutos();
   </script>
 </body>
 </html>
