@@ -1,13 +1,72 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro de Produtos - LucrouBem</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Produtos</title>
   <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #1e3a8a;
+    }
+    label {
+      font-weight: bold;
+      margin-top: 15px;
+      display: block;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 8px;
+      background: #f3f4f6;
+      padding: 10px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Cadastro de Produtos</h2>
+    <label>Nome do Produto</label>
+    <input type="text" id="nome" />
+
+    <label>Preço</label>
+    <input type="number" id="preco" />
+
+    <button onclick="salvarProduto()">Salvar Produto</button>
+
+    <h3>Produtos Cadastrados:</h3>
+    <ul id="lista-produtos"></ul>
+  </div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
@@ -17,85 +76,46 @@
       messagingSenderId: "620372674751",
       appId: "1:620372674751:web:bcfdf762160345b7be1e0a"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-  </script>
-</head>
-<body>
-  <div class="container">
-    <h1>Cadastro de Produtos</h1>
-    <div>
-      <input type="text" id="nomeProduto" placeholder="Nome do produto">
-      <input type="number" id="precoProduto" placeholder="Preço do produto" step="0.01">
-      <button onclick="cadastrarProduto()">Cadastrar Produto</button>
-    </div>
 
-    <h2>Produtos cadastrados</h2>
-    <ul id="listaProdutos"></ul>
-  </div>
-
-  <script>
     firebase.auth().onAuthStateChanged(user => {
       if (!user) return window.location.href = "index.html";
       carregarProdutos(user.uid);
     });
 
-    function cadastrarProduto() {
+    function salvarProduto() {
+      const nome = document.getElementById("nome").value;
+      const preco = parseFloat(document.getElementById("preco").value);
       const user = firebase.auth().currentUser;
-      const nome = document.getElementById("nomeProduto").value.trim();
-      const preco = parseFloat(document.getElementById("precoProduto").value);
-      if (!nome || isNaN(preco)) return alert("Preencha os campos corretamente!");
+
+      if (!nome || isNaN(preco)) return alert("Preencha todos os campos.");
 
       db.collection("produtos").add({
-        uid: user.uid,
         nome,
         preco,
-        criadoEm: new Date()
+        uid: user.uid
       }).then(() => {
-        document.getElementById("nomeProduto").value = "";
-        document.getElementById("precoProduto").value = "";
+        alert("Produto salvo com sucesso!");
+        document.getElementById("nome").value = "";
+        document.getElementById("preco").value = "";
         carregarProdutos(user.uid);
       });
     }
 
     function carregarProdutos(uid) {
+      const lista = document.getElementById("lista-produtos");
+      lista.innerHTML = "";
+
       db.collection("produtos").where("uid", "==", uid).get().then(snapshot => {
-        const lista = document.getElementById("listaProdutos");
-        lista.innerHTML = "";
         snapshot.forEach(doc => {
-          const p = doc.data();
+          const { nome, preco } = doc.data();
           const li = document.createElement("li");
-          li.innerHTML = `
-            <strong>${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
-            <button onclick="editarProduto('${doc.id}', '${p.nome}', ${p.preco})">Editar</button>
-            <button onclick="excluirProduto('${doc.id}')">Excluir</button>
-          `;
+          li.textContent = `${nome} - R$ ${preco.toFixed(2)}`;
           lista.appendChild(li);
         });
       });
-    }
-
-    function editarProduto(id, nomeAtual, precoAtual) {
-      const novoNome = prompt("Novo nome do produto:", nomeAtual);
-      const novoPreco = prompt("Novo preço:", precoAtual);
-      if (!novoNome || isNaN(parseFloat(novoPreco))) return alert("Dados inválidos!");
-
-      db.collection("produtos").doc(id).update({
-        nome: novoNome,
-        preco: parseFloat(novoPreco)
-      }).then(() => {
-        const user = firebase.auth().currentUser;
-        carregarProdutos(user.uid);
-      });
-    }
-
-    function excluirProduto(id) {
-      if (confirm("Tem certeza que deseja excluir este produto?")) {
-        db.collection("produtos").doc(id).delete().then(() => {
-          const user = firebase.auth().currentUser;
-          carregarProdutos(user.uid);
-        });
-      }
     }
   </script>
 </body>
