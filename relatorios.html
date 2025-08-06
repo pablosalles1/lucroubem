@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <title>Relatórios - LucrouBem</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore-compat.js"></script>
   <link rel="stylesheet" href="style.css" />
   <style>
     body {
@@ -41,11 +44,6 @@
 
     .menu-item:hover {
       opacity: 0.9;
-    }
-
-    .menu-item svg {
-      width: 18px;
-      height: 18px;
     }
 
     .main-content {
@@ -120,9 +118,6 @@
     </div>
   </div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAsqsH7PCLWLtyhhVeLtTqZlxj-iKMn10M",
@@ -135,10 +130,21 @@
 
     firebase.initializeApp(firebaseConfig);
 
+    let uid = null;
+    let db = null;
+    let grafico = null;
+
     firebase.auth().onAuthStateChanged((user) => {
       if (!user) {
         window.location.href = "index.html";
+        return;
       }
+
+      uid = user.uid;
+      db = firebase.firestore();
+
+      carregarCategorias();
+      aplicarFiltros();
     });
 
     function logout() {
@@ -147,27 +153,92 @@
       });
     }
 
-    // Exemplo de gráfico com dados estáticos — será dinâmico com filtros
-    const ctx = document.getElementById("graficoFaturamento").getContext("2d");
-    new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
-        datasets: [{
-          label: "Faturamento (R$)",
-          data: [120, 220, 180, 150, 230, 270, 300],
-          backgroundColor: "#2563eb"
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        aspectRatio: 2
-      }
-    });
+    function carregarCategorias() {
+      const categoriaVendaSelect = document.getElementById('categoriaVenda');
+      const categoriaGastoSelect = document.getElementById('categoriaGasto');
+
+      db.collection("produtos")
+        .where("uid", "==", uid)
+        .get()
+        .then(snapshot => {
+          snapshot.forEach(doc => {
+            const produto = doc.data().nome;
+            const opt = document.createElement("option");
+            opt.value = produto;
+            opt.textContent = produto;
+            categoriaVendaSelect.appendChild(opt);
+          });
+        });
+
+      db.collection("gastos")
+        .where("uid", "==", uid)
+        .get()
+        .then(snapshot => {
+          const categorias = new Set();
+          snapshot.forEach(doc => {
+            const cat = doc.data().categoria;
+            if (cat) categorias.add(cat);
+          });
+          categorias.forEach(cat => {
+            const opt = document.createElement("option");
+            opt.value = cat;
+            opt.textContent = cat;
+            categoriaGastoSelect.appendChild(opt);
+          });
+        });
+    }
 
     function aplicarFiltros() {
-      alert("Funcionalidade de filtro será implementada.");
+      const inicio = document.getElementById("dataInicio").value;
+      const fim = document.getElementById("dataFim").value;
+      const categoria = document.getElementById("categoriaVenda").value;
+
+      let query = db.collection("vendas").where("uid", "==", uid);
+
+      if (inicio) query = query.where("data", ">=", inicio);
+      if (fim) query = query.where("data", "<=", fim);
+      if (categoria) query = query.where("categoria", "==", categoria);
+
+      query.get().then(snapshot => {
+        const dados = {};
+
+        snapshot.forEach(doc => {
+          const venda = doc.data();
+          const data = venda.data;
+          const valor = venda.valor;
+
+          if (!dados[data]) dados[data] = 0;
+          dados[data] += valor;
+        });
+
+        const labels = Object.keys(dados).sort();
+        const valores = labels.map(d => dados[d]);
+
+        desenharGrafico(labels, valores);
+      });
+    }
+
+    function desenharGrafico(labels, valores) {
+      const ctx = document.getElementById("graficoFaturamento").getContext("2d");
+
+      if (grafico) grafico.destroy();
+
+      grafico = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Faturamento (R$)",
+            data: valores,
+            backgroundColor: "#2563eb"
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          aspectRatio: 2
+        }
+      });
     }
   </script>
 </body>
