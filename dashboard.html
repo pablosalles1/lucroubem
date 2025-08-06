@@ -103,8 +103,8 @@
   <div class="sidebar">
     <h2>LucrouBem</h2>
     <div class="menu-item" onclick="window.location.href='dashboard.html'"><span>🏠</span> <span>Dashboard</span></div>
-    <div class="menu-item" onclick="window.location.href='lancar-venda.html'"><span>➕</span> <span>Lancar Venda</span></div>
-    <div class="menu-item" onclick="window.location.href='lancar-gasto.html'"><span>💳</span> <span>Lancar Gasto</span></div>
+    <div class="menu-item" onclick="window.location.href='lancar-venda.html'"><span>➕</span> <span>Lançar Venda</span></div>
+    <div class="menu-item" onclick="window.location.href='lancar-gasto.html'"><span>💳</span> <span>Lançar Gasto</span></div>
     <div class="menu-item" onclick="window.location.href='relatorios.html'"><span>📊</span> <span>Relatórios</span></div>
     <div class="menu-item" onclick="logout()"><span>⬅️</span> <span>Sair</span></div>
   </div>
@@ -164,38 +164,50 @@
       const db = firebase.firestore();
       const uid = user.uid;
 
-      // Buscar dados reais do Firestore (vendas, gastos)
       const hoje = new Date();
       const seteDiasAtras = new Date();
       seteDiasAtras.setDate(hoje.getDate() - 7);
+
+      const dataHojeStr = hoje.toISOString().split("T")[0];
+      const dataSeteDiasStr = seteDiasAtras.toISOString().split("T")[0];
 
       let totalVendas = 0;
       let totalGastos = 0;
 
       db.collection("vendas")
         .where("uid", "==", uid)
-        .where("data", ">=", seteDiasAtras)
+        .where("data", ">=", dataSeteDiasStr)
         .get()
         .then(snapshot => {
-          snapshot.forEach(doc => totalVendas += doc.data().valor);
-          document.getElementById("total-vendas").innerText = totalVendas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          snapshot.forEach(doc => {
+            const venda = doc.data();
+            if (!isNaN(venda.valor)) totalVendas += venda.valor;
+          });
+          document.getElementById("total-vendas").innerText =
+            totalVendas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
           atualizarLucro();
         });
 
       db.collection("gastos")
         .where("uid", "==", uid)
-        .where("data", ">=", seteDiasAtras)
+        .where("data", ">=", dataSeteDiasStr)
         .get()
         .then(snapshot => {
-          snapshot.forEach(doc => totalGastos += doc.data().valor);
-          document.getElementById("total-gastos").innerText = totalGastos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          snapshot.forEach(doc => {
+            const gasto = doc.data();
+            if (!isNaN(gasto.valor)) totalGastos += gasto.valor;
+          });
+          document.getElementById("total-gastos").innerText =
+            totalGastos.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
           atualizarLucro();
         });
 
       function atualizarLucro() {
         const lucro = totalVendas - totalGastos;
-        document.getElementById("lucro-estimado").innerText = lucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        document.getElementById("lucro-mensal").innerText = lucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById("lucro-estimado").innerText =
+          lucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById("lucro-mensal").innerText =
+          lucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
       }
     });
 
@@ -207,4 +219,3 @@
   </script>
 </body>
 </html>
-
